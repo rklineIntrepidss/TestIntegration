@@ -1,0 +1,6 @@
+- route:
+    from:
+      uri: "timer:hello?period=5000"
+      steps:
+        - log:
+            message: "Hello from Karavan!"
