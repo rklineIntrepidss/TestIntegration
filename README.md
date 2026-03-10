@@ -13,6 +13,6 @@ Deployment is expected to happen through the existing dev environment already co
 Primary project files:
 
 - `aras-odoo-sync/application.properties`
-- `aras-odoo-sync/routes/aras-part-bom-sync.camel.yaml`
+- `aras-odoo-sync/aras-part-bom-sync.camel.yaml`
 - `Reference/Send Part To Odoo Server.cs`
 - `Reference/docker-compose.yml`

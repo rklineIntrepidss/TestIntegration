@@ -14,6 +14,11 @@ Runtime assumption:
 - this project folder is the source scaffold for that environment
 - no separate local compose stack is required in this repository
 
+Karavan layout note:
+
+- route definitions should live at the project root
+- do not place route YAML files in a `routes/` folder because Karavan does not recognize that layout here
+
 Reference inputs:
 
 - `../Reference/Send Part To Odoo Server.cs`

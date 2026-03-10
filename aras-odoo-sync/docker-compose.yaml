@@ -1,0 +1,13 @@
+services:
+  aras-odoo-sync:
+    image: aras-odoo-sync
+    restart: always
+    ports:
+      - "8081:8080"
+    networks:
+      - karavan
+
+networks:
+  karavan:
+    external: true
+    name: karavan
