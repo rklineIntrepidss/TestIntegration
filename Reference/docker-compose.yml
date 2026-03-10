@@ -1,0 +1,50 @@
+services:
+  artemis:
+    image: apache/activemq-artemis:2.44.0-alpine
+    container_name: artemis
+    restart: unless-stopped
+    ports:
+      - "61616:61616"
+      - "8161:8161"
+    environment:
+      ARTEMIS_USERNAME: ${ARTEMIS_USERNAME:-artemis}
+      ARTEMIS_PASSWORD: ${ARTEMIS_PASSWORD:-artemis}
+      DISABLE_SECURITY: "false"
+    volumes:
+      - artemis_data:/var/lib/artemis-instance
+    networks:
+      - karavan
+
+  camel-karavan:
+    image: ghcr.io/apache/camel-karavan:4.14.2
+    container_name: camel-karavan
+    restart: unless-stopped
+    depends_on:
+      - artemis
+    ports:
+      - "8080:8080"
+    environment:
+      KARAVAN_GIT_REPOSITORY: ${KARAVAN_GIT_REPOSITORY}
+      KARAVAN_GIT_USERNAME: ${KARAVAN_GIT_USERNAME}
+      KARAVAN_GIT_PASSWORD: ${KARAVAN_GIT_TOKEN}
+      KARAVAN_GIT_BRANCH: ${KARAVAN_GIT_BRANCH:-main}
+      KARAVAN_DOCKER_NETWORK: karavan
+      KARAVAN_MODE: dev
+
+      KARAVAN_MQ_BROKERS_0_NAME: artemis
+      KARAVAN_MQ_BROKERS_0_URL: tcp://artemis:61616
+      KARAVAN_MQ_BROKERS_0_USERNAME: ${ARTEMIS_USERNAME:-artemis}
+      KARAVAN_MQ_BROKERS_0_PASSWORD: ${ARTEMIS_PASSWORD:-artemis}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./karavan-cache-data:/cache-data
+    networks:
+      - karavan
+
+networks:
+  karavan:
+    name: karavan
+
+volumes:
+  artemis_data:
+    name: karavan-stack_artemis_data
