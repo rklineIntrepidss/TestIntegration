@@ -10,7 +10,9 @@
       steps:
         - to:
             id: to-direct-main
-            uri: direct:sendToOdoo
+            uri: direct
+            parameters:
+              name: sendToOdoo
 - route:
     id: route-send-to-odoo
     from:
@@ -31,6 +33,28 @@
                 expression: ${body}
         - doTry:
             id: doTry-send
+            doCatch:
+              - id: doCatch-send
+                exception:
+                  - java.lang.Exception
+                steps:
+                  - log:
+                      id: log-ex-1
+                      message: "Routing failed Odoo request to retry queue: ${exception.message}"
+                      loggingLevel: ERROR
+                  - setBody:
+                      id: setBody-ex-1
+                      expression:
+                        simple:
+                          id: simple-ex-2
+                          expression: ${exchangeProperty.originalBody}
+                  - to:
+                      id: to-ex-1
+                      uri: kamelet:jms-apache-artemis-sink
+                      parameters:
+                        brokerURL: "{{artemis.broker.url}}"
+                        destinationName: "{{artemis.queue.odoo.retry}}"
+                        destinationType: queue
             steps:
               - setHeader:
                   id: setHeader-d85c
@@ -91,25 +115,3 @@
                       - log:
                           id: log-5f6f
                           message: "Odoo created product: ${body[result]}"
-            doCatch:
-              - id: doCatch-send
-                exception:
-                  - java.lang.Exception
-                steps:
-                  - log:
-                      id: log-ex-1
-                      message: "Routing failed Odoo request to retry queue: ${exception.message}"
-                      loggingLevel: ERROR
-                  - setBody:
-                      id: setBody-ex-1
-                      expression:
-                        simple:
-                          id: simple-ex-2
-                          expression: ${exchangeProperty.originalBody}
-                  - to:
-                      id: to-ex-1
-                      uri: kamelet:jms-apache-artemis-sink
-                      parameters:
-                        brokerURL: "{{artemis.broker.url}}"
-                        destinationName: "{{artemis.queue.odoo.retry}}"
-                        destinationType: queue
