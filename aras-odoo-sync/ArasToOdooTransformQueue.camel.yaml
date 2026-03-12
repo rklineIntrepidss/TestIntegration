@@ -1,0 +1,30 @@
+- route:
+    id: route-f7f8
+    nodePrefixId: route-4e3
+    from:
+      id: from-7fca
+      uri: kamelet:jms-apache-artemis-source
+      parameters:
+        brokerURL: "{{artemis.broker.url}}"
+        destinationName: "{{artemis.queue.aras.part}}"
+      steps:
+        - unmarshal:
+            id: unmarshal-cdd3
+            jacksonXml:
+              id: jacksonXml-0a8d
+              unmarshalType: Part
+              allowUnmarshallType: false
+        - marshal:
+            id: marshal-f496
+            json:
+              id: json-71b2
+        - to:
+            id: to-fa75
+            uri: kamelet:jms-apache-artemis-sink
+            parameters:
+              brokerURL: "{{artemis.broker.url}}"
+              destinationName: "{{artemis.queue.odoo.part}}"
+              destinationType: queue
+        - log:
+            id: log-5285
+            message: ${body}

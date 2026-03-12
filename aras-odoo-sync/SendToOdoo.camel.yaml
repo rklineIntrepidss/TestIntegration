@@ -1,0 +1,123 @@
+- onException:
+    id: onException-odoo-send
+    exception:
+      - java.lang.Exception
+    handled:
+      constant: true
+    steps:
+      - log:
+          id: log-ex-1
+          message: "Routing failed Odoo request to retry queue: ${exception.message}"
+          loggingLevel: ERROR
+      - choice:
+          id: choice-ex-1
+          when:
+            - id: when-ex-1
+              expression:
+                simple:
+                  id: simple-ex-1
+                  expression: ${exchangeProperty.originalBody} != null
+              steps:
+                - setBody:
+                    id: setBody-ex-1
+                    expression:
+                      simple:
+                        id: simple-ex-2
+                        expression: ${exchangeProperty.originalBody}
+      - to:
+          id: to-ex-1
+          uri: kamelet:jms-apache-artemis-sink
+          parameters:
+            brokerURL: "{{artemis.broker.url}}"
+            destinationName: "{{artemis.queue.odoo.retry}}"
+            destinationType: queue
+- route:
+    id: route-52f6
+    nodePrefixId: route-669
+    from:
+      id: from-10bb
+      uri: kamelet:jms-apache-artemis-source
+      parameters:
+        brokerURL: "{{artemis.broker.url}}"
+        destinationName: "{{artemis.queue.odoo.part}}"
+      steps:
+        - to:
+            id: to-direct-main
+            uri: direct:sendToOdoo
+- route:
+    id: route-send-to-odoo
+    from:
+      id: from-direct-send
+      uri: direct
+      parameters:
+        name: sendToOdoo
+      steps:
+        - log:
+            id: log-cd41
+            message: "FROM QUEUE: ${body}"
+        - setProperty:
+            id: setProperty-original
+            name: originalBody
+            expression:
+              simple:
+                id: simple-original
+                expression: ${body}
+        - setHeader:
+            id: setHeader-d85c
+            name: Content-Type
+            expression:
+              constant:
+                id: constant-86de
+                expression: application/json
+        - setBody:
+            id: setBody-b2ed
+            expression:
+              simple:
+                id: simple-9f22
+                expression: " {\r\n  \"jsonrpc\": \"2.0\",\r\n  \"method\": \"call\",\r\n  \"params\": {\r\n    \"service\": \"object\",\r\n    \"method\": \"execute_kw\",\r\n    \"args\": [\r\n      \"{{odoo.db}}\",\r\n      {{odoo.user}},\r\n      \"{{odoo.pass}}\",\r\n      \"product.template\",\r\n      \"create\",\r\n      [${body}]\r\n      ]\r\n  },\r\n  \"id\": 1\r\n}"
+        - log:
+            id: log-32de
+            message: "TO ODOO: ${body}"
+        - to:
+            id: to-f31f
+            uri: http
+            parameters:
+              httpMethod: POST
+              httpUri: "{{odoo.jsonrpc}}"
+              logHttpActivity: true
+        - unmarshal:
+            id: unmarshal-0791
+            json:
+              id: json-3dab
+        - choice:
+            id: choice-ba8f
+            when:
+              - id: when-3eb2
+                expression:
+                  simple:
+                    id: simple-0e07
+                    expression: ${body[error]} != null
+                steps:
+                  - log:
+                      id: log-c538
+                      message: "Odoo ERROR: ${body[error][message]}"
+                      loggingLevel: ERROR
+                  - setBody:
+                      id: setBody-retry
+                      expression:
+                        simple:
+                          id: simple-retry
+                          expression: ${exchangeProperty.originalBody}
+                  - to:
+                      id: to-retry
+                      uri: kamelet:jms-apache-artemis-sink
+                      parameters:
+                        brokerURL: "{{artemis.broker.url}}"
+                        destinationName: "{{artemis.queue.odoo.retry}}"
+                        destinationType: queue
+            otherwise:
+              id: otherwise-4c28
+              steps:
+                - log:
+                    id: log-5f6f
+                    message: "Odoo created product: ${body[result]}"

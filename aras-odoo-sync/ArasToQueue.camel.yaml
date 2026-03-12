@@ -1,0 +1,56 @@
+- restConfiguration:
+    component: platform-http
+    bindingMode: "off"
+- rest:
+    id: rest-727b
+    get:
+      - id: get-b92b
+        path: /part
+        to: direct:partsPing
+        produces: text/plain
+    post:
+      - id: post-5ec1
+        path: /part
+        to: direct:ArasToQueue
+        consumes: application/xml
+- route:
+    id: route-fbfe
+    nodePrefixId: route-09e
+    from:
+      id: from-a2c5
+      uri: direct
+      parameters:
+        name: ArasToQueue
+      steps:
+        - log:
+            id: log-63da
+            message: ${body}
+        - to:
+            id: to-34d8
+            uri: kamelet:jms-apache-artemis-sink
+            pattern: InOnly
+            parameters:
+              brokerURL: "{{artemis.broker.url}}"
+              destinationName: "{{artemis.queue.aras.part}}"
+              destinationType: queue
+- route:
+    id: route-08b7
+    from:
+      id: from-fa89
+      uri: direct
+      parameters:
+        name: partsPing
+      steps:
+        - setHeader:
+            id: setHeader-a2d6
+            name: Content-Type
+            expression:
+              constant:
+                id: constant-8f5a
+                expression: text/plain
+        - setBody:
+            id: setBody-5951
+            expression:
+              constant:
+                id: constant-6015
+                expression: part endpoint is alive; send a POST with XML to /part
