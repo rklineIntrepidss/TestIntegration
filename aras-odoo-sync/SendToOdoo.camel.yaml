@@ -85,12 +85,12 @@
                               brokerURL: "{{artemis.broker.url}}"
                               destinationName: "{{artemis.queue.odoo.retry}}"
                               destinationType: queue
-                    otherwise:
-                      id: otherwise-4c28
-                      steps:
-                        - log:
-                            id: log-5f6f
-                            message: "Odoo created product: ${body[result]}"
+                  otherwise:
+                    id: otherwise-4c28
+                    steps:
+                      - log:
+                          id: log-5f6f
+                          message: "Odoo created product: ${body[result]}"
             doCatch:
               - id: doCatch-send
                 exception:
